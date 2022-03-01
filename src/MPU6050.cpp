@@ -40,7 +40,7 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 	if (run_update_thread){
 		std::thread(&MPU6050::_update, this).detach(); //Create a seperate thread, for the update routine to run in the background, and detach it, allowing the program to continue
 	}
-    getOffsets(&G_OFF_X, &G_OFF_Y, &G_OFF_Z, &A_OFF_X, &A_OFF_Y, &A_OFF_Z);
+    getOffsets(&A_OFF_X, &A_OFF_Y, &A_OFF_Z, &G_OFF_X, &G_OFF_Y, &G_OFF_Z);
 }
 
 MPU6050::MPU6050(int8_t addr) : MPU6050(addr, true){}
