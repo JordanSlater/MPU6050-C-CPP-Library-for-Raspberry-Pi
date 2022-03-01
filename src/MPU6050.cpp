@@ -77,7 +77,7 @@ void MPU6050::getAccel(float *x, float *y, float *z) {
 	*z = round((*z - A_OFF_Z) * 1000.0 / ACCEL_SENS) / 1000.0;
 }
 
-void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off) {
+void MPU6050::getOffsets(volatile float *ax_off, volatile float *ay_off, volatile float *az_off, volatile float *gr_off, volatile float *gp_off, volatile float *gy_off) {
 	float gyro_off[3]; //Temporary storage
 	float accel_off[3];
 
