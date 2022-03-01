@@ -92,8 +92,8 @@ extern "C" {
 class MPU6050 {
 	private:
 		void _update();
-        volatile float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
-        volatile float A_OFF_X = 0, A_OFF_Y = 0, A_OFF_Z = 0;
+        float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
+        float A_OFF_X = 0, A_OFF_Y = 0, A_OFF_Z = 0;
 		float _accel_angle[3];
 		float _gyro_angle[3];
 		float _angle[3]; //Store all angles (accel roll, accel pitch, accel yaw, gyro roll, gyro pitch, gyro yaw, comb roll, comb pitch comb yaw)
@@ -115,7 +115,8 @@ class MPU6050 {
 		void getGyroRaw(float *roll, float *pitch, float *yaw);
 		void getAccel(float *x, float *y, float *z);
 		void getGyro(float *roll, float *pitch, float *yaw);
-		void getOffsets(volatile float *ax_off, volatile float *ay_off, volatile float *az_off, volatile float *gr_off, volatile float *gp_off, volatile float *gy_off);
+		void getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off);
+        int setOffsets();
 		int getAngle(int axis, float *result);
 		bool calc_yaw;
 };

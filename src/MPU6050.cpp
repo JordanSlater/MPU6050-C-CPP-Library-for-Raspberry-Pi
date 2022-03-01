@@ -40,7 +40,6 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 	if (run_update_thread){
 		std::thread(&MPU6050::_update, this).detach(); //Create a seperate thread, for the update routine to run in the background, and detach it, allowing the program to continue
 	}
-    getOffsets(&A_OFF_X, &A_OFF_Y, &A_OFF_Z, &G_OFF_X, &G_OFF_Y, &G_OFF_Z);
 }
 
 MPU6050::MPU6050(int8_t addr) : MPU6050(addr, true){}
@@ -77,7 +76,7 @@ void MPU6050::getAccel(float *x, float *y, float *z) {
 	*z = round((*z - A_OFF_Z) * 1000.0 / ACCEL_SENS) / 1000.0;
 }
 
-void MPU6050::getOffsets(volatile float *ax_off, volatile float *ay_off, volatile float *az_off, volatile float *gr_off, volatile float *gp_off, volatile float *gy_off) {
+void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off) {
 	float gyro_off[3]; //Temporary storage
 	float accel_off[3];
 
@@ -96,7 +95,11 @@ void MPU6050::getOffsets(volatile float *ax_off, volatile float *ay_off, volatil
 	*ax_off = *ax_off / 10000, *ay_off = *ay_off / 10000, *az_off = *az_off / 10000;
 
 	*az_off = *az_off - ACCEL_SENS; //Remove 1g from the value calculated to compensate for gravity
-    std::cout << "offsets: SET\n";
+}
+
+int MPU6050::setOffsets() {
+    getOffsets(&A_OFF_X, &A_OFF_Y, &A_OFF_Z, &G_OFF_X, &G_OFF_Y, &G_OFF_Z);
+    return 1;
 }
 
 int MPU6050::getAngle(int axis, float *result) {
