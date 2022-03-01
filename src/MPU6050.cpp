@@ -4,6 +4,7 @@
 
 //Include the header file for this class
 #include "MPU6050.h"
+#include <iostream>
 
 MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 	int status;
@@ -39,6 +40,7 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 	if (run_update_thread){
 		std::thread(&MPU6050::_update, this).detach(); //Create a seperate thread, for the update routine to run in the background, and detach it, allowing the program to continue
 	}
+    getOffsets(&G_OFF_X, &G_OFF_Y, &G_OFF_Z, &A_OFF_X, &A_OFF_Y, &A_OFF_Z);
 }
 
 MPU6050::MPU6050(int8_t addr) : MPU6050(addr, true){}
@@ -93,7 +95,8 @@ void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_
 	*gr_off = *gr_off / 10000, *gp_off = *gp_off / 10000, *gy_off = *gy_off / 10000; //Divide by number of loops (to average)
 	*ax_off = *ax_off / 10000, *ay_off = *ay_off / 10000, *az_off = *az_off / 10000;
 
-	*az_off = *az_off - ACCEL_SENS; //Remove 1g from the value calculated to compensate for gravity)
+	*az_off = *az_off - ACCEL_SENS; //Remove 1g from the value calculated to compensate for gravity
+    std::cout << "offsets: SET\n";
 }
 
 int MPU6050::getAngle(int axis, float *result) {

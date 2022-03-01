@@ -28,10 +28,10 @@
 #define A_OFF_X 19402
 #define A_OFF_Y -2692
 #define A_OFF_Z -8625
-//    Gyroscope
-#define G_OFF_X -733
-#define G_OFF_Y 433
-#define G_OFF_Z -75
+////    Gyroscope
+//int G_OFF_X -733;
+//int G_OFF_Y 433;
+//int G_OFF_Z -75;
 
 //-----------------------END MODIFY THESE PARAMETERS-----------------------
 
@@ -92,7 +92,7 @@ extern "C" {
 class MPU6050 {
 	private:
 		void _update();
-
+        float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
 		float _accel_angle[3];
 		float _gyro_angle[3];
 		float _angle[3]; //Store all angles (accel roll, accel pitch, accel yaw, gyro roll, gyro pitch, gyro yaw, comb roll, comb pitch comb yaw)
