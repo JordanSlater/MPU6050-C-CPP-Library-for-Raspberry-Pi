@@ -83,7 +83,7 @@ void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_
 	*gr_off = 0, *gp_off = 0, *gy_off = 0; //Initialize the offsets to zero
 	*ax_off = 0, *ay_off = 0, *az_off = 0; //Initialize the offsets to zero
 
-	for (int i = 0; i < 10000; i++) { //Use loop to average offsets
+	for (int i = 0; i < 100; i++) { //Use loop to average offsets
 		getGyroRaw(&gyro_off[0], &gyro_off[1], &gyro_off[2]); //Raw gyroscope values
 		*gr_off = *gr_off + gyro_off[0], *gp_off = *gp_off + gyro_off[1], *gy_off = *gy_off + gyro_off[2]; //Add to sum
 
@@ -91,8 +91,8 @@ void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_
 		*ax_off = *ax_off + accel_off[0], *ay_off = *ay_off + accel_off[1], *az_off = *az_off + accel_off[2]; //Add to sum
 	}
 
-	*gr_off = *gr_off / 10000, *gp_off = *gp_off / 10000, *gy_off = *gy_off / 10000; //Divide by number of loops (to average)
-	*ax_off = *ax_off / 10000, *ay_off = *ay_off / 10000, *az_off = *az_off / 10000;
+	*gr_off = *gr_off / 100, *gp_off = *gp_off / 100, *gy_off = *gy_off / 100; //Divide by number of loops (to average)
+	*ax_off = *ax_off / 100, *ay_off = *ay_off / 100, *az_off = *az_off / 100;
 
 	*az_off = *az_off - ACCEL_SENS; //Remove 1g from the value calculated to compensate for gravity
 }
