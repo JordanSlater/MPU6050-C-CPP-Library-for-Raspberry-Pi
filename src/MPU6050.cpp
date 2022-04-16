@@ -34,6 +34,11 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 
 	i2c_smbus_write_byte_data(f_dev, 0x1c, ACCEL_CONFIG); //Configure accelerometer settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
 
+    i2c_smbus_write_byte_data(f_dev, 0x1F, 10); //Write the desired Motion threshold to register 0x1F (For example, write decimal 20).
+//    writeByte(MPU6050_ADDRESS, MOT_DUR, 40); //Set motion detect duration to 1  ms; LSB is 1 ms @ 1 kHz rate
+    i2c_smbus_write_byte_data(f_dev, 0x38, 0x40); //write register 0x38, bit 6 (0x40), to enable motion detection interrupt.
+    i2c_smbus_write_byte_data(f_dev, 0x37, 160); // now INT pin is active low
+
 	//Set offsets to zero
 	i2c_smbus_write_byte_data(f_dev, 0x06, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x07, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x08, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x09, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x0A, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x0B, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x00, 0b10000001), i2c_smbus_write_byte_data(f_dev, 0x01, 0b00000001), i2c_smbus_write_byte_data(f_dev, 0x02, 0b10000001);
 
