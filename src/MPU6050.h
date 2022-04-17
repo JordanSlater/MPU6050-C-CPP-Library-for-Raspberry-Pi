@@ -119,4 +119,5 @@ class MPU6050 {
         int setOffsets();
 		int getAngle(int axis, float *result);
 		bool calc_yaw;
+        int clearInterrupt();
 };

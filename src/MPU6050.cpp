@@ -36,7 +36,7 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 
     i2c_smbus_write_byte_data(f_dev, 0x68, 0x07); // Reset internal signals
     i2c_smbus_write_byte_data(f_dev, 0x1C, 0x01); // set high pass to 5Hz
-    i2c_smbus_write_byte_data(f_dev, 0x37, 0xa0); // active low push-pull
+    i2c_smbus_write_byte_data(f_dev, 0x37, 0xa0); // active low push-pull, only cleared by reading reg 0x3A
     i2c_smbus_write_byte_data(f_dev, 0x20, 40); // motion duration 1ms
     i2c_smbus_write_byte_data(f_dev, 0x1F, 20); // motion threshold 1ms
     i2c_smbus_write_byte_data(f_dev, 0x69, 0x15); // motion decrement + startup delay
@@ -51,6 +51,10 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 }
 
 MPU6050::MPU6050(int8_t addr) : MPU6050(addr, true){}
+
+int clearInterrupt(){
+    return i2c_smbus_read_byte_data(f_dev, 0x3A) & 0x01;
+}
 
 void MPU6050::getGyroRaw(float *roll, float *pitch, float *yaw) {
 	int16_t X = i2c_smbus_read_byte_data(f_dev, 0x43) << 8 | i2c_smbus_read_byte_data(f_dev, 0x44); //Read X registers
