@@ -111,9 +111,9 @@ class MPU6050 {
 	public:
 		MPU6050(int8_t addr);
 		MPU6050(int8_t addr, bool run_update_thread);
-		void getAccelRaw(float *x, float *y, float *z);
+		void getAccelRaw(volatile float *x, volatile float *y, volatile float *z);
 		void getGyroRaw(float *roll, float *pitch, float *yaw);
-		void getAccel(float *x, float *y, float *z);
+		void getAccel(volatile float *x, volatile float *y, volatile float *z);
 		void getGyro(float *roll, float *pitch, float *yaw);
 		void getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off);
         int setOffsets();
