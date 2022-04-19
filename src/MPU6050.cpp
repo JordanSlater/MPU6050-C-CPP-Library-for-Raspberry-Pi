@@ -81,11 +81,12 @@ void MPU6050::getAccelRaw(volatile float *x, volatile float *y, volatile float *
 	*z = (float)Z;
 }
 
-void MPU6050::getAccel(volatile float *x, volatile float *y, volatile float *z) {
+bool MPU6050::getAccel(volatile float *x, volatile float *y, volatile float *z) {
 	getAccelRaw(x, y, z); //Store raw values into variables
 	*x = round((*x - A_OFF_X) * 1000.0 / ACCEL_SENS) / 1000.0; //Remove the offset and divide by the accelerometer sensetivity (use 1000 and round() to round the value to three decimal places)
 	*y = round((*y - A_OFF_Y) * 1000.0 / ACCEL_SENS) / 1000.0;
 	*z = round((*z - A_OFF_Z) * 1000.0 / ACCEL_SENS) / 1000.0;
+    return true;
 }
 
 void MPU6050::getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off) {
