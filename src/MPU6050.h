@@ -25,16 +25,17 @@
 
 //Offsets - supply your own here (calculate offsets with getOffsets function)
 //     Accelerometer
-#define A_OFF_X 19402
-#define A_OFF_Y -2692
-#define A_OFF_Z -8625
-//    Gyroscope
-#define G_OFF_X -733
-#define G_OFF_Y 433
-#define G_OFF_Z -75
+//#define A_OFF_X 19402
+//#define A_OFF_Y -2692
+//#define A_OFF_Z -8625
+////    Gyroscope
+//int G_OFF_X -733;
+//int G_OFF_Y 433;
+//int G_OFF_Z -75;
 
 //-----------------------END MODIFY THESE PARAMETERS-----------------------
 
+#pragma once
 #include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
@@ -91,7 +92,8 @@ extern "C" {
 class MPU6050 {
 	private:
 		void _update();
-
+        float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
+        float A_OFF_X = 0, A_OFF_Y = 0, A_OFF_Z = 0;
 		float _accel_angle[3];
 		float _gyro_angle[3];
 		float _angle[3]; //Store all angles (accel roll, accel pitch, accel yaw, gyro roll, gyro pitch, gyro yaw, comb roll, comb pitch comb yaw)
@@ -109,11 +111,13 @@ class MPU6050 {
 	public:
 		MPU6050(int8_t addr);
 		MPU6050(int8_t addr, bool run_update_thread);
-		void getAccelRaw(float *x, float *y, float *z);
+		void getAccelRaw(volatile float *x, volatile float *y, volatile float *z);
 		void getGyroRaw(float *roll, float *pitch, float *yaw);
-		void getAccel(float *x, float *y, float *z);
+		bool getAccel(volatile float *x, volatile float *y, volatile float *z);
 		void getGyro(float *roll, float *pitch, float *yaw);
 		void getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off);
+        int setOffsets();
 		int getAngle(int axis, float *result);
 		bool calc_yaw;
+        int clearInterrupt();
 };
