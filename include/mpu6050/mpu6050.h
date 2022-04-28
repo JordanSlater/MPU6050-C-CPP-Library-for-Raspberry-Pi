@@ -91,7 +91,7 @@ extern "C" {
 
 class MPU6050 {
 	private:
-		void _update();
+		void _update_loop();
         float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
         float A_OFF_X = 0, A_OFF_Y = 0, A_OFF_Z = 0;
 		float _accel_angle[3];
@@ -120,4 +120,5 @@ class MPU6050 {
 		int getAngle(int axis, float *result);
 		bool calc_yaw;
         int clearInterrupt();
+		void manual_update();
 };

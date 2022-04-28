@@ -6,7 +6,7 @@
 #include "mpu6050/mpu6050.h"
 #include <iostream>
 
-MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
+MPU6050::MPU6050(int8_t addr, bool run_update_thread_loop) {
 	int status;
 
 	MPU6050_addr = addr;
@@ -45,8 +45,8 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 	//Set offsets to zero
 	i2c_smbus_write_byte_data(f_dev, 0x06, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x07, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x08, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x09, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x0A, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x0B, 0b00000000), i2c_smbus_write_byte_data(f_dev, 0x00, 0b10000001), i2c_smbus_write_byte_data(f_dev, 0x01, 0b00000001), i2c_smbus_write_byte_data(f_dev, 0x02, 0b10000001);
 
-	if (run_update_thread){
-		std::thread(&MPU6050::_update, this).detach(); //Create a seperate thread, for the update routine to run in the background, and detach it, allowing the program to continue
+	if (run_update_thread_loop){
+		std::thread(&MPU6050::_update_loop, this).detach(); //Create a seperate thread, for the update routine to run in the background, and detach it, allowing the program to continue
 	}
 }
 
@@ -127,66 +127,70 @@ int MPU6050::getAngle(int axis, float *result) {
 	}
 }
 
-void MPU6050::_update() { //Main update function - runs continuously
+void MPU6050::_update_loop() { //Main update function - runs continuously
 	clock_gettime(CLOCK_REALTIME, &start); //Read current time into start variable
 
 	while (1) { //Loop forever
-		getGyro(&gr, &gp, &gy); //Get the data from the sensors
-		getAccel(&ax, &ay, &az);
-
-		//X (roll) axis
-		_accel_angle[0] = atan2(az, ay) * RAD_T_DEG - 90.0; //Calculate the angle with z and y convert to degrees and subtract 90 degrees to rotate
-		_gyro_angle[0] = _angle[0] + gr*dt; //Use roll axis (X axis)
-
-		//Y (pitch) axis
-		_accel_angle[1] = atan2(az, ax) * RAD_T_DEG - 90.0; //Calculate the angle with z and x convert to degrees and subtract 90 degrees to rotate
-		_gyro_angle[1] = _angle[1] + gp*dt; //Use pitch axis (Y axis)
-
-		//Z (yaw) axis
-		if (calc_yaw) {
-			_gyro_angle[2] = _angle[2] + gy*dt; //Use yaw axis (Z axis)
-		}
-
-
-		if (_first_run) { //Set the gyroscope angle reference point if this is the first function run
-			for (int i = 0; i <= 1; i++) {
-				_gyro_angle[i] = _accel_angle[i]; //Start off with angle from accelerometer (absolute angle since gyroscope is relative)
-			}
-			_gyro_angle[2] = 0; //Set the yaw axis to zero (because the angle cannot be calculated with the accelerometer when vertical)
-			_first_run = 0;
-		}
-
-		float asum = abs(ax) + abs(ay) + abs(az); //Calculate the sum of the accelerations
-		float gsum = abs(gr) + abs(gp) + abs(gy); //Calculate the sum of the gyro readings
-
-		for (int i = 0; i <= 1; i++) { //Loop through roll and pitch axes
-			if (abs(_gyro_angle[i] - _accel_angle[i]) > 5) { //Correct for very large drift (or incorrect measurment of gyroscope by longer loop time)
-				_gyro_angle[i] = _accel_angle[i];
-			}
-
-			//Create result from either complementary filter or directly from gyroscope or accelerometer depending on conditions
-			if (asum > 0.1 && asum < 3 && gsum > 0.3) { //Check that th movement is not very high (therefore providing inacurate angles)
-				_angle[i] = (1 - TAU)*(_gyro_angle[i]) + (TAU)*(_accel_angle[i]); //Calculate the angle using a complementary filter
-			}
-			else if (gsum > 0.3) { //Use the gyroscope angle if the acceleration is high
-				_angle[i] = _gyro_angle[i];
-			}
-			else if (gsum <= 0.3) { //Use accelerometer angle if not much movement
-				_angle[i] = _accel_angle[i];
-			}
-		}
-
-		//The yaw axis will not work with the accelerometer angle, so only use gyroscope angle
-		if (calc_yaw) { //Only calculate the angle when we want it to prevent large drift
-			_angle[2] = _gyro_angle[2];
-		}
-		else {
-			_angle[2] = 0;
-			_gyro_angle[2] = 0;
-		}
+		manual_update();
 
 		clock_gettime(CLOCK_REALTIME, &end); //Save time to end clock
 		dt = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; //Calculate new dt
 		clock_gettime(CLOCK_REALTIME, &start); //Save time to start clock
+	}
+}
+
+void MPU6050::manual_update() {
+	getGyro(&gr, &gp, &gy); //Get the data from the sensors
+	getAccel(&ax, &ay, &az);
+
+	//X (roll) axis
+	_accel_angle[0] = atan2(az, ay) * RAD_T_DEG - 90.0; //Calculate the angle with z and y convert to degrees and subtract 90 degrees to rotate
+	_gyro_angle[0] = _angle[0] + gr*dt; //Use roll axis (X axis)
+
+	//Y (pitch) axis
+	_accel_angle[1] = atan2(az, ax) * RAD_T_DEG - 90.0; //Calculate the angle with z and x convert to degrees and subtract 90 degrees to rotate
+	_gyro_angle[1] = _angle[1] + gp*dt; //Use pitch axis (Y axis)
+
+	//Z (yaw) axis
+	if (calc_yaw) {
+		_gyro_angle[2] = _angle[2] + gy*dt; //Use yaw axis (Z axis)
+	}
+
+
+	if (_first_run) { //Set the gyroscope angle reference point if this is the first function run
+		for (int i = 0; i <= 1; i++) {
+			_gyro_angle[i] = _accel_angle[i]; //Start off with angle from accelerometer (absolute angle since gyroscope is relative)
+		}
+		_gyro_angle[2] = 0; //Set the yaw axis to zero (because the angle cannot be calculated with the accelerometer when vertical)
+		_first_run = 0;
+	}
+
+	float asum = abs(ax) + abs(ay) + abs(az); //Calculate the sum of the accelerations
+	float gsum = abs(gr) + abs(gp) + abs(gy); //Calculate the sum of the gyro readings
+
+	for (int i = 0; i <= 1; i++) { //Loop through roll and pitch axes
+		if (abs(_gyro_angle[i] - _accel_angle[i]) > 5) { //Correct for very large drift (or incorrect measurment of gyroscope by longer loop time)
+			_gyro_angle[i] = _accel_angle[i];
+		}
+
+		//Create result from either complementary filter or directly from gyroscope or accelerometer depending on conditions
+		if (asum > 0.1 && asum < 3 && gsum > 0.3) { //Check that th movement is not very high (therefore providing inacurate angles)
+			_angle[i] = (1 - TAU)*(_gyro_angle[i]) + (TAU)*(_accel_angle[i]); //Calculate the angle using a complementary filter
+		}
+		else if (gsum > 0.3) { //Use the gyroscope angle if the acceleration is high
+			_angle[i] = _gyro_angle[i];
+		}
+		else if (gsum <= 0.3) { //Use accelerometer angle if not much movement
+			_angle[i] = _accel_angle[i];
+		}
+	}
+
+	//The yaw axis will not work with the accelerometer angle, so only use gyroscope angle
+	if (calc_yaw) { //Only calculate the angle when we want it to prevent large drift
+		_angle[2] = _gyro_angle[2];
+	}
+	else {
+		_angle[2] = 0;
+		_gyro_angle[2] = 0;
 	}
 }

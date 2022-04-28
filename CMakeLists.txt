@@ -124,6 +124,9 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/mpu6050.cpp
 )
+target_link_libraries(${PROJECT_NAME}
+  "-li2c"
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
