@@ -115,8 +115,7 @@ class MPU6050 {
 		void getGyroRaw(float *roll, float *pitch, float *yaw);
 		bool getAccel(volatile float *x, volatile float *y, volatile float *z);
 		void getGyro(float *roll, float *pitch, float *yaw);
-		void getOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off);
-        int setOffsets();
+		void getOffsets(const uint16_t samples, float *ax_off, float *ay_off, float *az_off, float *gr_off, float *gp_off, float *gy_off);
 		int getAngle(int axis, float *result);
 		bool calc_yaw;
         int clearInterrupt();
