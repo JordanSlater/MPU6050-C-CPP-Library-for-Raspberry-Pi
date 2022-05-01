@@ -9,9 +9,7 @@
 bool checkCalibration(CalibrationData calibration) {
 	return
 		calibration.gyro_range >= 0 && calibration.gyro_range < 4
-		&& calibration.accel_range >= 0 && calibration.accel_range < 4
-		&& calibration.gyro_offset_X >= 0 && calibration.gyro_offset_Y >= 0 && calibration.gyro_offset_Z >= 0
-		&& calibration.accel_offset_X >= 0 && calibration.accel_offset_Y >= 0 && calibration.accel_offset_Z >= 0;
+		&& calibration.accel_range >= 0 && calibration.accel_range < 4;
 }
 
 MPU6050::MPU6050(int8_t addr, CalibrationData calibration_data, bool run_update_thread_loop) : _calibration(calibration_data) {
