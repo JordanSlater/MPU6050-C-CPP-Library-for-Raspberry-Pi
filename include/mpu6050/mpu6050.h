@@ -2,39 +2,6 @@
 //Copyright (c) 2019, Alex Mous
 //Licensed under the CC BY-NC SA 4.0
 
-
-//-----------------------MODIFY THESE PARAMETERS-----------------------
-
-#define GYRO_RANGE 0 //Select which gyroscope range to use (see the table below) - Default is 0
-//	Gyroscope Range
-//	0	+/- 250 degrees/second
-//	1	+/- 500 degrees/second
-//	2	+/- 1000 degrees/second
-//	3	+/- 2000 degrees/second
-//See the MPU6000 Register Map for more information
-
-
-#define ACCEL_RANGE 0 //Select which accelerometer range to use (see the table below) - Default is 0
-//	Accelerometer Range
-//	0	+/- 2g
-//	1	+/- 4g
-//	2	+/- 8g
-//	3	+/- 16g
-//See the MPU6000 Register Map for more information
-
-
-//Offsets - supply your own here (calculate offsets with getOffsets function)
-//     Accelerometer
-//#define A_OFF_X 19402
-//#define A_OFF_Y -2692
-//#define A_OFF_Z -8625
-////    Gyroscope
-//int G_OFF_X -733;
-//int G_OFF_Y 433;
-//int G_OFF_Z -75;
-
-//-----------------------END MODIFY THESE PARAMETERS-----------------------
-
 #pragma once
 #include <iostream>
 #include <unistd.h>
@@ -54,46 +21,20 @@ extern "C" {
 #define TAU 0.05 //Complementary filter percentage
 #define RAD_T_DEG 57.29577951308 //Radians to degrees (180/PI)
 
-//Select the appropriate settings
-#if GYRO_RANGE == 1
-	#define GYRO_SENS 65.5
-	#define GYRO_CONFIG 0b00001000
-#elif GYRO_RANGE == 2
-	#define GYRO_SENS 32.8
-	#define GYRO_CONFIG 0b00010000
-#elif GYRO_RANGE == 3
-	#define GYRO_SENS 16.4
-	#define GYRO_CONFIG 0b00011000
-#else //Otherwise, default to 0
-	#define GYRO_SENS 131.0
-	#define GYRO_CONFIG 0b00000000
-#endif
-#undef GYRO_RANGE
+int CONFIG[4] = {0b00000000, 0b00001000, 0b00010000, 0b00011000};
+float ACCEL_SENS[4] = {16384.0, 8192.0, 4096.0, 2048.0};
+float GYRO_SENS[4] = {131.0, 65.5, 32.8, 16.4};
 
-
-#if ACCEL_RANGE == 1
-	#define ACCEL_SENS 8192.0
-	#define ACCEL_CONFIG 0b00001000
-#elif ACCEL_RANGE == 2
-	#define ACCEL_SENS 4096.0
-	#define ACCEL_CONFIG 0b00010000
-#elif ACCEL_RANGE == 3
-	#define ACCEL_SENS 2048.0
-	#define ACCEL_CONFIG 0b00011000
-#else //Otherwise, default to 0
-	#define ACCEL_SENS 16384.0
-	#define ACCEL_CONFIG 0b00000000
-#endif
-#undef ACCEL_RANGE
-
-
-
+struct CalibrationData {
+	uint8_t gyro_range = -1;
+	float gyro_offset_X = 0, gyro_offset_Y = 0, gyro_offset_Z = 0;
+	uint8_t accel_range = -1;
+	float accel_offset_X = 0, accel_offset_Y = 0, accel_offset_Z = 0;
+};
 
 class MPU6050 {
 	private:
 		void _update_loop();
-        float G_OFF_X = 0, G_OFF_Y = 0, G_OFF_Z = 0;
-        float A_OFF_X = 0, A_OFF_Y = 0, A_OFF_Z = 0;
 		float _accel_angle[3];
 		float _gyro_angle[3];
 		float _angle[3]; //Store all angles (accel roll, accel pitch, accel yaw, gyro roll, gyro pitch, gyro yaw, comb roll, comb pitch comb yaw)
@@ -108,9 +49,10 @@ class MPU6050 {
 		struct timespec start,end; //Create a time structure
 
 		bool _first_run = 1; //Variable for whether to set gyro angle to acceleration angle in compFilter
+		CalibrationData _calibration;
 	public:
-		MPU6050(int8_t addr);
-		MPU6050(int8_t addr, bool run_update_thread);
+		MPU6050(int8_t addr, CalibrationData calibration_data);
+		MPU6050(int8_t addr, CalibrationData calibration_data, bool run_update_thread);
 		void getAccelRaw(volatile float *x, volatile float *y, volatile float *z);
 		void getGyroRaw(float *roll, float *pitch, float *yaw);
 		bool getAccel(volatile float *x, volatile float *y, volatile float *z);

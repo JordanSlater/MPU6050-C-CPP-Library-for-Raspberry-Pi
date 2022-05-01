@@ -6,8 +6,20 @@
 #include "mpu6050/mpu6050.h"
 #include <iostream>
 
-MPU6050::MPU6050(int8_t addr, bool run_update_thread_loop) {
+bool checkCalibration(CalibrationData calibration) {
+	return
+		calibration.gyro_range >= 0 && calibration.gyro_range < 4
+		&& calibration.accel_range >= 0 && calibration.accel_range < 4
+		&& calibration.gyro_offset_X >= 0 && calibration.gyro_offset_Y >= 0 && calibration.gyro_offset_Z >= 0
+		&& calibration.accel_offset_X >= 0 && calibration.accel_offset_Y >= 0 && calibration.accel_offset_Z >= 0;
+}
+
+MPU6050::MPU6050(int8_t addr, CalibrationData calibration_data, bool run_update_thread_loop) : _calibration(calibration_data) {
 	int status;
+
+	if (!checkCalibration(_calibration)) {
+		std::cout << "Invalid calibration values\n";
+	}
 
 	MPU6050_addr = addr;
 	dt = 0.009; //Loop time (recalculated with each loop)
@@ -30,9 +42,9 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread_loop) {
 
 	i2c_smbus_write_byte_data(f_dev, 0x19, 0b00000100); //Set sample rate divider (to 200Hz) - see Register Map
 
-	i2c_smbus_write_byte_data(f_dev, 0x1b, GYRO_CONFIG); //Configure gyroscope settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
+	i2c_smbus_write_byte_data(f_dev, 0x1b, CONFIG[_calibration.gyro_range]); //Configure gyroscope settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
 
-	i2c_smbus_write_byte_data(f_dev, 0x1c, ACCEL_CONFIG); //Configure accelerometer settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
+	i2c_smbus_write_byte_data(f_dev, 0x1c, CONFIG[_calibration.accel_range]); //Configure accelerometer settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
 
     i2c_smbus_write_byte_data(f_dev, 0x68, 0x07); // Reset internal signals
     i2c_smbus_write_byte_data(f_dev, 0x69, 0x30); //set accel startup to 3ms
@@ -50,7 +62,7 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread_loop) {
 	}
 }
 
-MPU6050::MPU6050(int8_t addr) : MPU6050(addr, true){}
+MPU6050::MPU6050(int8_t addr, CalibrationData calibrationData) : MPU6050(addr, calibrationData, true){}
 
 int MPU6050::clearInterrupt(){
     return i2c_smbus_read_byte_data(f_dev, 0x3A) & 0x01;
@@ -67,9 +79,9 @@ void MPU6050::getGyroRaw(float *roll, float *pitch, float *yaw) {
 
 void MPU6050::getGyro(float *roll, float *pitch, float *yaw) {
 	getGyroRaw(roll, pitch, yaw); //Store raw values into variables
-	*roll = round((*roll - G_OFF_X) * 1000.0 / GYRO_SENS) / 1000.0; //Remove the offset and divide by the gyroscope sensetivity (use 1000 and round() to round the value to three decimal places)
-	*pitch = round((*pitch - G_OFF_Y) * 1000.0 / GYRO_SENS) / 1000.0;
-	*yaw = round((*yaw - G_OFF_Z) * 1000.0 / GYRO_SENS) / 1000.0;
+	*roll = round((*roll - _calibration.gyro_offset_X) * 1000.0 / GYRO_SENS[_calibration.gyro_range]) / 1000.0; //Remove the offset and divide by the gyroscope sensetivity (use 1000 and round() to round the value to three decimal places)
+	*pitch = round((*pitch - _calibration.gyro_offset_Y) * 1000.0 / GYRO_SENS[_calibration.gyro_range]) / 1000.0;
+	*yaw = round((*yaw - _calibration.gyro_offset_Z) * 1000.0 / GYRO_SENS[_calibration.gyro_range]) / 1000.0;
 }
 
 void MPU6050::getAccelRaw(volatile float *x, volatile float *y, volatile float *z) {
@@ -83,9 +95,9 @@ void MPU6050::getAccelRaw(volatile float *x, volatile float *y, volatile float *
 
 bool MPU6050::getAccel(volatile float *x, volatile float *y, volatile float *z) {
 	getAccelRaw(x, y, z); //Store raw values into variables
-	*x = round((*x - A_OFF_X) * 1000.0 / ACCEL_SENS) / 1000.0; //Remove the offset and divide by the accelerometer sensetivity (use 1000 and round() to round the value to three decimal places)
-	*y = round((*y - A_OFF_Y) * 1000.0 / ACCEL_SENS) / 1000.0;
-	*z = round((*z - A_OFF_Z) * 1000.0 / ACCEL_SENS) / 1000.0;
+	*x = round((*x - _calibration.accel_offset_X) * 1000.0 / ACCEL_SENS[_calibration.accel_range]) / 1000.0; //Remove the offset and divide by the accelerometer sensetivity (use 1000 and round() to round the value to three decimal places)
+	*y = round((*y - _calibration.accel_offset_Y) * 1000.0 / ACCEL_SENS[_calibration.accel_range]) / 1000.0;
+	*z = round((*z - _calibration.accel_offset_Z) * 1000.0 / ACCEL_SENS[_calibration.accel_range]) / 1000.0;
     return true;
 }
 
@@ -107,7 +119,7 @@ void MPU6050::getOffsets(const uint16_t samples, float *ax_off, float *ay_off, f
 	*gr_off = *gr_off / samples, *gp_off = *gp_off / samples, *gy_off = *gy_off / samples; //Divide by number of loops (to average)
 	*ax_off = *ax_off / samples, *ay_off = *ay_off / samples, *az_off = *az_off / samples;
 
-	*az_off = *az_off - ACCEL_SENS; //Remove 1g from the value calculated to compensate for gravity
+	*az_off = *az_off - ACCEL_SENS[_calibration.accel_range]; //Remove 1g from the value calculated to compensate for gravity
 }
 
 int MPU6050::getAngle(int axis, float *result) {
